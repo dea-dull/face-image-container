@@ -1,43 +1,45 @@
-import cv2
+
+import os
+from s3_utils import download_image_from_s3
+from facial_recognition import extract_embeddings
+from pinecone_utils import upload_embeddings_to_pinecone
+from config import BUCKET_NAME, ORGANIZATION_NAME
+from utils import cleanup_file
 import numpy as np
-from insightface import app
-from insightface.data import get_dataset
 
-def extract_embeddings(image_path):
-    # Load the image
-    img = cv2.imread(image_path)
 
-    if img is None:
-        raise Exception(f"Error: Image not found at {image_path}")
 
-    # Initialize InsightFace model (assuming the default model)
-    detector = app.FaceAnalysis()
-    detector.prepare(ctx_id=0)  # Use CPU (ctx_id=0) or GPU (ctx_id=1)
+def main():
+    # Get the S3 key from environment variables
+    s3_key = os.getenv("S3_KEY")
 
-    # Detect faces in the image
-    faces = detector.get(img)
-    
-    if len(faces) == 0:
-        raise Exception("No faces detected in the image.")
+    if not s3_key:
+        print("Error: No S3 key provided.")
+        return
 
-    # Extract embeddings for the first detected face (you can loop for multiple faces if needed)
-    embeddings = faces[0].embedding
+    # Step 1: Download the image from S3
+    image_path = download_image_from_s3(s3_key, S3_BUCKET_NAME)
+    if not image_path:
+        print("Failed to download image. Exiting.")
+        return
 
-    return embeddings
-
-def save_embeddings(embeddings, file_path="/home/ec2-user/face-image/embedding.npy"):
-    # Save the embeddings to a .npy file
-    np.save(file_path, embeddings)
-    print(f"Embeddings saved to {file_path}")
-
-def main(image_path):
+    # Step 2: Extract facial embeddings
     try:
         embeddings = extract_embeddings(image_path)
-        save_embeddings(embeddings)
-    except Exception as e:
-        print(f"Error: {e}")
+
+         if not embeddings:
+             print("No face detected. Exiting.")
+             return
+     except Exception as e:
+         print(f"Error processing image: {e}")
+         return
+
+    # Step 3: Upload embeddings to Pinecone
+    metadata = {"image_id": s3_key, "organization": ORGANIZATION_NAME}
+    upload_embeddings_to_pinecone(embeddings, metadata)
+
+    # Step 4: Cleanup
+    cleanup_file(image_path)
 
 if __name__ == "__main__":
-    image_path = "download.jpeg"  # Change to the path of the image you want to process
-    main(image_path)
-
+    main()
