@@ -1,10 +1,11 @@
-import pinecone
+from pinecone import Pinecone
 import uuid
 import hashlib
 from config import API_KEY, INDEX_NAME
+import os
 
 # Initialize Pinecone
-pc = pinecone.Client(api_key=API_KEY)
+pc = Pinecone(api_key=os.getenv("API_KEY"))
 index = pc.Index(INDEX_NAME)
 
 def generate_face_id(image_path):
@@ -35,7 +36,7 @@ def upload_embeddings_to_pinecone(embeddings, metadata, image_path, namespace="d
     vectors = [
         {
             "id": face_id,  # Use the generated face ID
-            "values": embedding.tolist(),
+            "values": embedding["embedding"],
             "metadata": metadata
         }
         for embedding in embeddings

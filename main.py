@@ -1,4 +1,5 @@
 
+
 import os
 from s3_utils import download_image_from_s3
 from facial_recognition import extract_embeddings
@@ -18,7 +19,7 @@ def main():
         return
 
     # Step 1: Download the image from S3
-    image_path = download_image_from_s3(s3_key, S3_BUCKET_NAME)
+    image_path = download_image_from_s3(s3_key, BUCKET_NAME)
     if not image_path:
         print("Failed to download image. Exiting.")
         return
@@ -27,16 +28,16 @@ def main():
     try:
         embeddings = extract_embeddings(image_path)
 
-         if not embeddings:
-             print("No face detected. Exiting.")
-             return
-     except Exception as e:
-         print(f"Error processing image: {e}")
-         return
+        if not embeddings:
+            print("No face detected. Exiting.")
+            return
+    except Exception as e:
+        print(f"Error processing image: {e}")
+        return
 
     # Step 3: Upload embeddings to Pinecone
     metadata = {"image_id": s3_key, "organization": ORGANIZATION_NAME}
-    upload_embeddings_to_pinecone(embeddings, metadata)
+    upload_embeddings_to_pinecone(embeddings, metadata, image_path, namespace="default")
 
     # Step 4: Cleanup
     cleanup_file(image_path)
