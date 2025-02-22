@@ -10,13 +10,15 @@ boto3==1.24.1
 # File and image validation
 python-magic>=0.4.24
 
+tf-keras
+
 # Pinecone integration
-pinecone-client>=2.2.0
+pinecone
 
 # Environment and OS utilities
 python-dotenv>=0.21.0
 
-insightface
 
 Werkzeug==2.2.2
 
+Deepface

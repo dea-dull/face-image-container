@@ -1,5 +1,3 @@
-
-
 import os
 from s3_utils import download_image_from_s3
 from facial_recognition import extract_embeddings
